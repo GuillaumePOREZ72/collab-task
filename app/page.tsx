@@ -1,17 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Wrapper from "./components/Wrapper";
 import { FolderGit2 } from "lucide-react";
-import { createProject } from "./action";
+import { createProject, getProjectsCreatedByUser } from "./action";
 import { useUser } from "@clerk/nextjs";
-import {toast} from 'react-toastify'
+import { toast } from "react-toastify";
+import { Project } from "@/type";
 
 export default function Home() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress as string;
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  const fecthProjects = async (email: string) => {
+    try {
+      const myproject = await getProjectsCreatedByUser(email);
+      setProjects(myproject);
+    } catch (error) {
+      console.error("Error creating project:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (email) {
+      fecthProjects(email);
+    }
+  }, [email]);
 
   const handleSubmit = async () => {
     try {
@@ -22,7 +39,7 @@ export default function Home() {
       }
       setName("");
       setDescription("");
-      toast.success("Projet créé")
+      toast.success("Projet créé");
     } catch (error) {
       console.error("Erreur lors de la création du projet", error);
     }
@@ -40,7 +57,7 @@ export default function Home() {
             ).showModal()
           }
         >
-            Nouveau Projet <FolderGit2 />
+          Nouveau Projet <FolderGit2 />
         </button>
         <dialog id="my_modal_3" className="modal">
           <div className="modal-box">
