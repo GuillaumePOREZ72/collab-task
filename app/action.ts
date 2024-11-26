@@ -92,12 +92,25 @@ export async function getProjectsCreatedByUser(email: string) {
     const formattedProjects = projects.map((project) => ({
       ...project,
       users: project.users.map((userEntry) => userEntry.user),
-    }))
+    }));
 
     return formattedProjects;
-    
   } catch (error) {
     console.error(error);
     throw new Error("Erreur lors de la récupération des projets");
+  }
+}
+
+export async function deleteProjectById(projectId: string) {
+  try {
+    await prisma.project.delete({
+      where: {
+        id: projectId,
+      },
+    });
+    console.log(`Projet ${projectId} supprimé avec succès`);
+  } catch (error) {
+    console.error(error);
+    throw new Error("Erreur lors de la suppression du projet");
   }
 }
