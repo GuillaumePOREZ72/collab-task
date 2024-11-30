@@ -1,10 +1,17 @@
 import { FolderGit2 } from "lucide-react";
-import React from "react";
 
 type WrapperProps = {
   children: React.ReactNode;
 };
 
+/**
+ * A component that wraps the children with a simple layout, including a Task Flow logo
+ * and a centered container for the children.
+ *
+ * @param {React.ReactNode} children - The content to render inside the wrapper.
+ *
+ * @returns A JSX element containing the wrapper and the children.
+ */
 const AuthWrapper = ({ children }: WrapperProps) => {
   return (
     <div className="h-screen flex justify-center items-center flex-col ">
@@ -12,7 +19,9 @@ const AuthWrapper = ({ children }: WrapperProps) => {
         <div className="bg-primary-content text-primary rounded-full p-2">
           <FolderGit2 className="w-6 h-6" />
         </div>
-        <span className="ml-3 font-bold text-3xl">Task <span className="text-primary">Flow</span></span>
+        <span className="ml-3 font-bold text-3xl">
+          Task <span className="text-primary">Flow</span>
+        </span>
       </div>
       <div>{children}</div>
     </div>

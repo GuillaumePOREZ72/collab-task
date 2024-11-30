@@ -7,6 +7,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { checkAndAddUser } from "../action";
 
+/**
+ * The navbar component.
+ *
+ * This component renders the top navigation bar. It handles the user's
+ * authentication status and displays the appropriate links. It also handles
+ * the mobile menu.
+ *
+ * @returns The navbar component.
+ */
 const Navbar = () => {
   const { user } = useUser();
   const [menuOpen, setMenuOpen] = useState(false);

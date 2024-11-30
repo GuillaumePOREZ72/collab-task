@@ -11,6 +11,14 @@ interface ProjectProps {
   onDelete?: (id: string) => void;
 }
 
+  /**
+   * A component to display a project with its name, description, collaborators, progress, and invite code.
+   * @param {Project} project The project to display.
+   * @param {number} admin The level of administration the user has for the project (1 for admin, 0 for member).
+   * @param {boolean} style Whether the component should be styled as a card or not.
+   * @param {function} onDelete A function to call when the user clicks the delete button.
+   * @returns A JSX component to display the project.
+   */
 const ProjectComponent: FC<ProjectProps> = ({
   project,
   admin,

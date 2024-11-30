@@ -3,6 +3,14 @@
 import prisma from "@/lib/prisma";
 import { randomBytes } from "crypto";
 
+/**
+ * Vérifie si un utilisateur existe déjà dans la base de données,
+ * et le crée si ce n'est pas le cas.
+ *
+ * @param {string} email - Adresse e-mail de l'utilisateur.
+ * @param {string} name - Nom de l'utilisateur.
+ * @returns {Promise<void>}
+ */
 export async function checkAndAddUser(email: string, name: string) {
   if (!email) return;
   try {
@@ -27,10 +35,24 @@ export async function checkAndAddUser(email: string, name: string) {
   }
 }
 
+/**
+ * Génère un code unique composé de 6 caractères hexadécimaux.
+ *
+ * @returns {string} Un code unique.
+ */
 function generateUniqueCode(): string {
   return randomBytes(6).toString("hex");
 }
 
+/**
+ * Crée un nouveau projet avec un nom, une description et un code d'invitation unique.
+ *
+ * @param {string} name - Le nom du projet.
+ * @param {string} description - La description du projet.
+ * @param {string} email - L'adresse e-mail de l'utilisateur créant le projet.
+ * @returns {Promise<Project>} Le projet nouvellement créé.
+ * @throws {Error} Si l'utilisateur n'est pas trouvé ou en cas d'erreur lors de la création du projet.
+ */
 export async function createProject(
   name: string,
   description: string,
@@ -62,6 +84,13 @@ export async function createProject(
   }
 }
 
+/**
+ * Récupère la liste des projets crée par l'utilisateur dont l'email est fourni.
+ *
+ * @param {string} email - L'email de l'utilisateur.
+ * @returns {Promise<Project[]>} La liste des projets crée par l'utilisateur.
+ * @throws {Error} Si l'utilisateur n'est pas trouvé ou en cas d'erreur lors de la récupération des projets.
+ */
 export async function getProjectsCreatedByUser(email: string) {
   try {
     const projects = await prisma.project.findMany({
@@ -101,6 +130,13 @@ export async function getProjectsCreatedByUser(email: string) {
   }
 }
 
+
+/**
+ * Supprime un projet de la base de données par son identifiant.
+ *
+ * @param {string} projectId - L'identifiant du projet à supprimer.
+ * @throws {Error} Si une erreur survient lors de la suppression du projet.
+ */
 export async function deleteProjectById(projectId: string) {
   try {
     await prisma.project.delete({
@@ -108,98 +144,192 @@ export async function deleteProjectById(projectId: string) {
         id: projectId,
       },
     });
-    console.log(`Projet ${projectId} supprimé avec succès`);
+    
   } catch (error) {
     console.error(error);
     throw new Error("Erreur lors de la suppression du projet");
   }
 }
 
+/**
+ * Ajoute un utilisateur à un projet en fonction de son code d'invitation.
+ *
+ * @param {string} email - L'adresse e-mail de l'utilisateur à ajouter.
+ * @param {string} inviteCode - Le code d'invitation du projet.
+ * @returns {Promise<string>} Une promesse qui se résout en cas de succès
+ *   avec un message de confirmation, ou qui lance une erreur en cas d'erreur.
+ * @throws {Error} Si le projet ou l'utilisateur n'est pas trouvé, si l'utilisateur
+ *   est déjà associé au projet, ou si une erreur survient lors de la
+ *   création de l'association entre l'utilisateur et le projet.
+ */
 export async function addUserToProject(email: string, inviteCode: string) {
   try {
-    
-    const project =   await prisma.project.findUnique({
-      where: {inviteCode}
-    })
+    const project = await prisma.project.findUnique({
+      where: { inviteCode },
+    });
 
-    if(!project) {
-      throw new Error('Projet non trouvé')
+    if (!project) {
+      throw new Error("Projet non trouvé");
     }
-    const user =   await prisma.user.findUnique({
-      where: {email}
-    })
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
 
-    if(!user) {
-      throw new Error('Utilisateur non trouvé')
+    if (!user) {
+      throw new Error("Utilisateur non trouvé");
     }
 
     const existingAssociation = await prisma.projectUser.findUnique({
       where: {
         userId_projectId: {
           userId: user.id,
-          projectId: project.id
-        }
-      }
-    })
+          projectId: project.id,
+        },
+      },
+    });
 
-    if(existingAssociation) {
-      throw new Error('Utilisateur déjà associé à ce projet')
+    if (existingAssociation) {
+      throw new Error("Utilisateur déjà associé à ce projet");
     }
 
     await prisma.projectUser.create({
       data: {
-          userId: user.id,
-          projectId: project.id
-        }
-      })
-    
-  return 'Utilisateur ajouté au projet avec succès'
+        userId: user.id,
+        projectId: project.id,
+      },
+    });
 
+    return "Utilisateur ajouté au projet avec succès";
   } catch (error) {
-    console.error(error)
-    throw new Error
+    console.error(error);
+    throw new Error();
   }
 }
 
-
+  /**
+   * Récupère la liste des projets associés à un utilisateur donné.
+   *
+   * @param {string} email - L'email de l'utilisateur.
+   * @returns {Promise<Project[]>} La liste des projets associés à l'utilisateur.
+   * @throws {Error} Si une erreur survient lors de la récupération des projets.
+   */
 export async function getProjectsAssociatedWithUser(email: string) {
   try {
-   
     const projects = await prisma.project.findMany({
       where: {
         users: {
-            some: {
-              user: {
-                email
-            }
-          }
-        }
-    },
-    include: {
-      tasks: true,
-      users: {
+          some: {
+            user: {
+              email,
+            },
+          },
+        },
+      },
+      include: {
+        tasks: true,
+        users: {
           select: {
             user: {
               select: {
                 id: true,
                 name: true,
                 email: true,
-              }
-            }
-          }
-      }
-    }
-  })
+              },
+            },
+          },
+        },
+      },
+    });
 
-  const formattedProjects = projects.map((project) => ({
-    ...project,
-    users: project.users.map((userEntry) => userEntry.user),
-  }));
+    const formattedProjects = projects.map((project) => ({
+      ...project,
+      users: project.users.map((userEntry) => userEntry.user),
+    }));
 
-  return formattedProjects;
-
+    return formattedProjects;
   } catch (error) {
-    console.error(error)
-    throw new Error
+    console.error(error);
+    throw new Error();
+  }
+}
+
+  /**
+   * Récupère un projet par son identifiant.
+   *
+   * @param {string} idProject - L'identifiant du projet.
+   * @param {boolean} details - Si vrai, les tâches, les utilisateurs et l'utilisateur
+   *   créateur du projet sont inclus dans la réponse.
+   * @returns {Promise<Project>} Le projet.
+   * @throws {Error} Si le projet n'est pas trouvé, ou si une erreur survient
+   *   lors de la récupération du projet.
+   */
+export async function getProjectInfo(idProject: string, details: boolean) {
+  try {
+    const project = await prisma.project.findUnique({
+      where: {
+        id: idProject,
+      },
+      include: details
+        ? {
+            tasks: {
+              include: {
+                user: true,
+                createdBy: true,
+              },
+            },
+            users: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+            createdBy: true,
+          }
+        : undefined,
+    });
+    if (!project) {
+      throw new Error("Projet introuvable");
+    }
+    return project;
+  } catch (error) {
+    console.error(error);
+    throw new Error();
+  }
+}
+
+
+
+/**
+ * Renvoie la liste des utilisateurs associés à un projet.
+ *
+ * @param {string} idProject - L'identifiant du projet.
+ * @returns {Promise<User[]>} La liste des utilisateurs.
+ * @throws {Error} Si une erreur survient lors de la r cup ration des utilisateurs.
+ */
+export async function getProjectUsers(idProject: string) {
+  try {
+    const projectWithUsers = await prisma.project.findUnique({
+      where: {
+        id: idProject,
+      },
+      include: {
+        users: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+    const users =
+      projectWithUsers?.users.map((projectUser) => projectUser.user) || [];
+    return users;
+  } catch (error) {
+    console.error(error);
+    throw new Error();
   }
 }
