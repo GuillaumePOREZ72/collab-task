@@ -8,6 +8,17 @@ interface AssignTaskProps {
   onAssignTask: (user: User) => void;
 }
 
+
+
+/**
+ * Component to assign a task to a user in a project
+ *
+ * Shows a dropdown list of all users in the project, and allows the user to select one
+ * of them to assign the task to.
+ *
+ * @param {{ users: User[], projectId: string, onAssignTask: (user: User) => void }} props
+ * @returns {JSX.Element}
+ */
 const AssignTask: FC<AssignTaskProps> = ({ users, projectId, onAssignTask }) => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 

@@ -130,7 +130,6 @@ export async function getProjectsCreatedByUser(email: string) {
   }
 }
 
-
 /**
  * Supprime un projet de la base de données par son identifiant.
  *
@@ -144,7 +143,6 @@ export async function deleteProjectById(projectId: string) {
         id: projectId,
       },
     });
-    
   } catch (error) {
     console.error(error);
     throw new Error("Erreur lors de la suppression du projet");
@@ -206,13 +204,13 @@ export async function addUserToProject(email: string, inviteCode: string) {
   }
 }
 
-  /**
-   * Récupère la liste des projets associés à un utilisateur donné.
-   *
-   * @param {string} email - L'email de l'utilisateur.
-   * @returns {Promise<Project[]>} La liste des projets associés à l'utilisateur.
-   * @throws {Error} Si une erreur survient lors de la récupération des projets.
-   */
+/**
+ * Récupère la liste des projets associés à un utilisateur donné.
+ *
+ * @param {string} email - L'email de l'utilisateur.
+ * @returns {Promise<Project[]>} La liste des projets associés à l'utilisateur.
+ * @throws {Error} Si une erreur survient lors de la récupération des projets.
+ */
 export async function getProjectsAssociatedWithUser(email: string) {
   try {
     const projects = await prisma.project.findMany({
@@ -253,16 +251,16 @@ export async function getProjectsAssociatedWithUser(email: string) {
   }
 }
 
-  /**
-   * Récupère un projet par son identifiant.
-   *
-   * @param {string} idProject - L'identifiant du projet.
-   * @param {boolean} details - Si vrai, les tâches, les utilisateurs et l'utilisateur
-   *   créateur du projet sont inclus dans la réponse.
-   * @returns {Promise<Project>} Le projet.
-   * @throws {Error} Si le projet n'est pas trouvé, ou si une erreur survient
-   *   lors de la récupération du projet.
-   */
+/**
+ * Récupère un projet par son identifiant.
+ *
+ * @param {string} idProject - L'identifiant du projet.
+ * @param {boolean} details - Si vrai, les tâches, les utilisateurs et l'utilisateur
+ *   créateur du projet sont inclus dans la réponse.
+ * @returns {Promise<Project>} Le projet.
+ * @throws {Error} Si le projet n'est pas trouvé, ou si une erreur survient
+ *   lors de la récupération du projet.
+ */
 export async function getProjectInfo(idProject: string, details: boolean) {
   try {
     const project = await prisma.project.findUnique({
@@ -302,8 +300,6 @@ export async function getProjectInfo(idProject: string, details: boolean) {
   }
 }
 
-
-
 /**
  * Renvoie la liste des utilisateurs associés à un projet.
  *
@@ -328,6 +324,74 @@ export async function getProjectUsers(idProject: string) {
     const users =
       projectWithUsers?.users.map((projectUser) => projectUser.user) || [];
     return users;
+  } catch (error) {
+    console.error(error);
+    throw new Error();
+  }
+}
+
+/**
+ * Crée un nouveau task dans un projet.
+ *
+ * @param {string} name - Le nom du task.
+ * @param {string} description - La description du task.
+ * @param {Date | null} dueDate - La date de fin du task.
+ * @param {string} projectId - L'identifiant du projet dans lequel cr er le task.
+ * @param {string} createdByEmail - L'email de l'utilisateur qui cr e le task.
+ * @param {string | undefined} assignToEmail - L'email de l'utilisateur  qui doit r cup rer le task, ou undefined pour assigner au cr ateur.
+ * @returns {Promise<void>} Une promesse qui se r solved en cas de succ s.
+ * @throws {Error} Si l'utilisateur cr ateur ou l'utilisateur assign  n'est pas trouv , ou en cas d'erreur lors de la cr ation du task.
+ */
+
+export async function createTask(
+  name: string,
+  description: string,
+  dueDate: Date | null,
+  projectId: string,
+  createdByEmail: string,
+  assignToEmail: string | undefined
+) {
+  try {
+    const createdBy = await prisma.user.findUnique({
+      where: {
+        email: createdByEmail,
+      },
+    });
+
+    if (!createdBy) {
+      throw new Error(`Utilisateur avec l'email ${createdByEmail} introuvable`);
+    }
+
+    let assignedUserId = createdBy.id;
+
+    if (assignToEmail) {
+      const assignedUser = await prisma.user.findUnique({
+        where: {
+          email: assignToEmail,
+        },
+      });
+
+      if (!assignedUser) {
+        throw new Error(
+          `Utilisateur avec l'email ${assignToEmail} introuvable`
+        );
+      }
+
+      assignedUserId = assignedUser.id;
+    }
+
+    const newTask = await prisma.task.create({
+      data: {
+        name,
+        description,
+        dueDate,
+        projectId,
+        createdById: createdBy.id,
+        userId: assignedUserId,
+      },
+    });
+    console.log("newTask", newTask);
+    
   } catch (error) {
     console.error(error);
     throw new Error();
