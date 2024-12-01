@@ -391,7 +391,19 @@ export async function createTask(
       },
     });
     console.log("newTask", newTask);
-    
+  } catch (error) {
+    console.error(error);
+    throw new Error();
+  }
+}
+
+export async function deleteTaskById(taskId: string) {
+  try {
+    await prisma.task.delete({
+      where: {
+        id: taskId,
+      },
+    });
   } catch (error) {
     console.error(error);
     throw new Error();
